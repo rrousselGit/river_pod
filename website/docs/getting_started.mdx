@@ -4,24 +4,10 @@ title: Getting started
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import ImageSwitcher from "../src/utils/image_switcher.js";
 
 Before diving into the inner mechanisms of [Riverpod], let's start with the basics:
-Installing up [Riverpod], then writing a "Hello world".
-
-You can also watch this video which explains the problems that [Riverpod] tries
-to solve.
-
-<div class="player">
-  <iframe
-    src="https://www.youtube.com/embed/zjBulEwjzeI"
-    frameborder="0"
-    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen
-  ></iframe>
-</div>
-
-(Note: this video does not explain how [Riverpod] works. It only explains the
-problems)
+Installing [Riverpod], then writing a "Hello world".
 
 ## What package to install
 
@@ -30,15 +16,19 @@ The variant of [Riverpod] that you will want to install depends on the app you a
 
 You can refer to the following table to help you decide which package to use:
 
-| app type                  | package name                                                                       | description                                                                          |
-| ------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| app type                  | package name                                                                       | description                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Flutter + [flutter_hooks] | [hooks_riverpod]                                                                   | A way to use both [flutter_hooks] and [Riverpod] together, while offering small extras. |
-| Flutter only              | [flutter_riverpod]                                                                 | A basic way of using [Riverpod], which does not depend on [flutter_hooks].           |
-| Dart only (No Flutter)    | [riverpod](https://github.com/rrousselGit/river_pod/tree/master/packages/riverpod) | A version of [Riverpod] with all the classes related to Flutter stripped out.            |
+| Flutter only              | [flutter_riverpod]                                                                 | A basic way of using [Riverpod], which does not depend on [flutter_hooks].              |
+| Dart only (No Flutter)    | [riverpod](https://github.com/rrousselGit/river_pod/tree/master/packages/riverpod) | A version of [Riverpod] with all the classes related to Flutter stripped out.           |
 
 And if it's not clear enough, you can refer to this decision graph:
 
-![package decision graph](/img/package_decision_graph.svg)
+<ImageSwitcher
+  alt="package decision graph"
+  light="/img/intro/decision_chart_light.svg"
+  dark="/img/intro/decision_chart_dark.svg"
+/>
 
 ## Installing the package
 
@@ -96,7 +86,7 @@ dependencies:
   riverpod: ^0.14.0
 ```
 
-Then run `pub get`.
+Then run `dart pub get`.
 
 </TabItem>
 </Tabs>
@@ -126,7 +116,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 // We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
@@ -171,7 +160,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
@@ -213,7 +201,6 @@ This will render "Hello world" in on your device.
 import 'package:riverpod/riverpod.dart';
 
 // We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
@@ -240,6 +227,20 @@ If you are using `Flutter` and `Vscode` , consider using [Flutter Riverpod Snipp
 If you are using `Flutter` and `Android Studio` or `IntelliJ`, consider using [Flutter Riverpod Snippets](https://plugins.jetbrains.com/plugin/14641-flutter-riverpod-snippets)
 
 ![img](/img/snippets/greetingProvider.gif)
+
+## Choose your next step
+
+Go through another tutorial:
+
+- [Creating a todo app](/docs/tutorials/create_a_todo_app)
+
+Learn some basic concepts:
+
+- [Learn more about providers](/docs/concepts/providers)
+
+Follow a cookbook:
+
+- [How to test providers](/docs/cookbooks/testing)
 
 [riverpod]: https://github.com/rrousselgit/river_pod
 [hooks_riverpod]: https://pub.dev/packages/hooks_riverpod

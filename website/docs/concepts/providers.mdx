@@ -57,11 +57,11 @@ This snippet consists of three components:
 
 - `Provider`, the provider that we decided to use.  
   [Provider] is the most basic of all providers. It exposes an object that never
-  changes.  
+  changes.
   We could replace [Provider] with other providers like [StreamProvider] or
   [StateNotifierProvider], to change how the value is interacted with.
 
-- A function that creates the shared state.  
+- A function that creates the shared state.
   That function will always receive an object called `ref` as a parameter. This object
   allows us to read other providers or to perform some operations when the state
   of our provider will be destroyed.
@@ -96,33 +96,28 @@ void main() {
 
 :::
 
-## Performing actions before the state destruction
+## Different Types of Providers
 
-In some cases, the state of a provider may get destroyed or re-created.
-A common use-case in those situations is to perform a cleanup before the state of a provider
-is destroyed, such as closing a `StreamController`.
+There are multiple types of providers for multiple different use cases.
 
-This is done using the `ref` object, which is passed to the callback of all providers, using its [onDispose] method.
+With all of these providers available, it is sometimes difficult to understand when to use one provider type over another.
+A general rule of thumb is to use the table below to choose a provider that fits what you want to provide to the widget tree.
 
-The following example uses [onDispose] to close a `StreamController`:
+| Provider Type          | Provider Create Function             | Example Use Case                                                     |
+| ---------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| Provider               | Returns any type                     | A service class / computed property (filtered list)                  |
+| StateProvider          | Returns any type                     | A filter condition / simple state object                             |
+| FutureProvider         | Returns a Future of any type         | A result from an API call                                            |
+| StreamProvider         | Returns a Stream of any type         | A stream of results from an API                                      |
+| StateNotifierProvider  | Returns a subclass of StateNotifier  | A complex state object that is immutable except through an interface |
+| ChangeNotifierProvider | Returns a subclass of ChangeNotifier | A complex state object that requires mutability                      |
 
-```dart
-final example = StreamProvider.autoDispose((ref) {
-  final streamController = StreamController<int>();
-
-  ref.onDispose(() {
-    // Closes the StreamController when the state of this provider is destroyed.
-    streamController.close();
-  });
-
-  return streamController.stream;
-});
-```
-
-:::note
-Depending on the provider used, it may already take care of the clean-up process.  
-For example, [StateNotifierProvider] will call the `dispose` method of a `StateNotifier`.
+:::caution
+While all providers have their purpose, `ChangeNotifierProviders` are not recommended for frequent use, because of
+general [issues with mutable state](/docs/concepts/why_immutability). It exists in the `flutter_riverpod` package to provide an easy migration path from `package:provider`.
 :::
+
+To learn more about the different types of providers and how to use them most effectively see [Provider Types](/docs//concepts/provider_types)
 
 ## Provider Modifiers
 

@@ -6,15 +6,15 @@ title: ProviderObserver
 
 To use it, extend the class ProviderObserver and override the method you like to use.
 
-[ProviderObserver] has four methods :
+[ProviderObserver] has four methods:
 
 - `didAddProvider` is called every time a provider was initialized, and the value exposed is value.
-- `didDisposeProvider` is called every time A provider was disposed
-- `didUpdateProvider` is called every time my providers when they emit a notification.
+- `didDisposeProvider` is called every time a provider was disposed
+- `didUpdateProvider` is called every time a provider emits a notification.
 - `mayHaveChanged` is called when the dependency of a provider changed, but it is not yet sure if the computed value changes.
 
 :::info
-It is possible that mayHaveChanged will be called, without didUpdateProvider being called, such as when a Provider is re-computed but returns a value == to the previous one.
+It is possible that mayHaveChanged will be called, without didUpdateProvider being called, such as when a Provider is re-computed but returns a value equal to the previous one.
 :::
 
 ### Usage :
@@ -74,7 +74,7 @@ class Home extends StatelessWidget {
 }
 ```
 
-Now that every time the value of our provider is updated, the logger will log it :
+Now, every time the value of our provider is updated, the logger will log it:
 
 ```
 I/flutter (16783): {

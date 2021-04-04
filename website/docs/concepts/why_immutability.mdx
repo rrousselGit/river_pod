@@ -1,0 +1,111 @@
+---
+title: Why Immutability
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+## What is Immutability?
+
+Immutability is essentially when all fields of an `Object` are final.
+They are set exactly once upon construction.
+
+Immutability is desireable for many different reasons
+
+- Value equality rather than reference equality
+  - A copyWith method helps with reducing verbosity when creating a new object with just a few things changed
+- Local reasoning about a piece of code
+  - A far distant piece of code can't have a reference and change the object from underneath you
+- Easier to reason about for asynchronous and parallel tasks
+  - Other code can't mutate your object in between operations
+- Safety of APIs
+  - What you pass into a method cannot be changed by the callee / caller
+  - Flutter uses this for Themes, since an override of a theme parameter in one part of an app shouldn't affect another part
+
+## Best Practices
+
+You can use any package you want to create immutable state.
+
+For immutable objects:
+
+- [package:freezed](https://pub.dev/packages/freezed)
+- [package:built_value](https://pub.dev/packages/built_value)
+
+For immutable collections (Map, Set, List):
+
+- [package:fast_immutable_collections](https://pub.dev/packages/fast_immutable_collections)
+- [package:built_collection](https://pub.dev/packages/built_collection)
+- [package:kt_dart](https://pub.dev/packages/kt_dart)
+- [package:dartz](https://pub.dev/packages/dartz)
+
+It is highly recommended to use `freezed`,
+since it has several nice additions beyond just making immutable objects including:
+
+- A generated copyWith method
+- Deep copy (copyWith on nested freezed objects)
+- Union types
+- Union mapping functions
+
+In fact freezed is used within the riverpod framework to give you [AsyncValue]
+
+### Using immutable state
+
+Immutable state is best fit for using a [StateNotifier] in combination with [StateNotifierProvider].
+Though a [ChangeNotifier] can also be used with immutable state, it requires an explicit
+`notifyListeners()` call whenever the state changes. State notifier just requires that you set the `state` to the new state.
+This makes it less prone to errors from not remembering to call `notifyListeners()`.
+
+Here is an example of a simple immutable settings class for changing an app theme.
+
+```dart
+final themeProvider = StateNotifierProvider((ref) => ThemeNotifier());
+
+class ThemeNotifier extends StateNotifier<ThemeSettings> {
+  ThemeNotifier(): super(
+      ThemeSettings(
+        mode: ThemeMode.system,
+        primaryColor: Colors.blue,
+      ));
+
+  void toggle() {
+    state = state.copyWith(mode: state.mode.toggle);
+  }
+  void setDarkTheme() {
+    state = state.copyWith(mode: ThemeMode.dark);
+  }
+  void setLightTheme() {
+    state = state.copyWith(mode: ThemeMode.light);
+  }
+  void setSystemTheme() {
+    state = state.copyWith(mode: ThemeMode.system);
+  }
+  void setPrimaryColor(Color color) {
+    state = state.copyWith(primaryColor: color);
+  }
+
+}
+
+@freezed
+abstract class ThemeSettings with _$ThemeSettings {
+  const factory ThemeSettings({ThemeMode mode, Color primaryColor}) = _ThemeSettings;
+}
+
+extension ToggleTheme on ThemeMode {
+  ThemeMode get toggle {
+    switch (this){
+      case ThemeMode.dark:
+        return ThemeMode.light;
+      case ThemeMode.light:
+        return ThemeMode.dark;
+      case ThemeMode.system:
+        return ThemeMode.system;
+    }
+  }
+}
+
+```
+
+[changenotifier]: https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html
+[statenotifier]: https://pub.dev/documentation/riverpod/latest/riverpod/StateNotifier-class.html
+[statenotifierprovider]: https://pub.dev/documentation/riverpod/latest/riverpod/StateNotifierProvider-class.html
+[asyncvalue]: https://pub.dev/documentation/riverpod/latest/riverpod/AsyncValue-class.html

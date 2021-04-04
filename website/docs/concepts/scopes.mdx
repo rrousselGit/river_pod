@@ -1,0 +1,144 @@
+---
+title: Scopes
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+Scoping in riverpod is an important thing to understand.
+
+Many issues that developers have with riverpod come from misunderstanding scope.
+
+## Container Scope
+
+A scope is introduced by a `ProviderContainer`. This container holds the current state of
+all of your providers. It manages the lookup and subscriptions between providers.
+
+In Flutter you should use the `ProviderScope` widget, which contains a `ProviderContainer`
+internally, and provides a way to access that container to the rest of the widget tree.
+
+```dart
+final valueProvider = StateProvider((ref) => 0);
+
+// DO this
+void main() {
+  runApp(ProviderScope(child: MyApp()));
+}
+
+//DON'T do this:
+final myProviderContainer = ProviderContainer();
+void main(){
+  runApp(MyApp());
+}
+```
+
+:::warning
+Do not use multiple `ProviderContainers`. Each will have it's own separate thread of states, which will not be able to access each other.
+You will quickly become disoriented and confused.
+:::
+
+A `ProviderContainer` by itself should only be utilized for testing and dart-only usage.
+In Flutter it should not be used, unless you have a need for asynchronous initialization prior
+to showing any screens. For asynchronous concerns see the [asynchronous cookbook](/docs/cookbooks/asynchrony)
+
+## ScopedProvider and ScopedReader
+
+`ScopedProvider` is a special provider which can provide values to only a portion of the widget tree.
+In most respects it is like a simple `Provider`, however no other providers besides a `ScopedProvider` can read or watch a `ScopedProvider`.
+
+Since `ConsumerWidget` gives you a reference to a `ScopedReader` you can access a `ScopedProvider` from the widget tree.
+
+The easiest way to understand this type of scoping is to see an example of a todo list.
+
+```dart
+/// A simple Todo class
+class Todo {
+  Todo(this.todo);
+  final String todo;
+}
+
+/// Provides a list of [Todo]s.
+final todoListProvider = StateProvider<List<Todo>>(
+    (ref) => [Todo('this'), Todo('that'), Todo('the other')]);
+
+/// Provides the length of the todo list
+///
+/// Only changes when the todo list changes size to optimize rebuilds
+final todoListLengthProvider =
+    Provider<int>((ref) => ref.watch(todoListProvider).state.length);
+
+/// Provides the index for a todo in a particular portion
+/// of the widget tree
+final todoItemIndexProvider = ScopedProvider<int>((ref) =>
+    throw UnimplementedError('Provider Not Set'));
+
+/// Widget for the whole todo list
+class TodoListWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, ScopedReader watch) {
+    final length = watch(todoListLengthProvider);
+    print('Build List');
+    return ListView.builder(
+      itemCount: length,
+      itemBuilder: (context, index) {
+        // Overrides the todoItemIndexProvider
+        // for everything below this in the tree
+        return ProviderScope(
+          overrides: [
+            todoItemIndexProvider.overrideWithValue(index),
+          ],
+          // Using this approach, TodoWidget can now be constant
+          // since no index needs to be passed down
+          child: const TodoWidget(),
+        );
+      },
+    );
+  }
+}
+
+
+/// Provides a single todo, so you can watch them individually
+///
+/// This way you will only be notified if the particular todo you
+/// were watching was updated
+final todoProvider = Provider.family<Todo, int>(
+    (ref, index) => ref.watch(todoListProvider).state[index]);
+
+/// A widget to show a single todo
+class TodoWidget extends ConsumerWidget {
+  const TodoWidget();
+  @override
+  Widget build(BuildContext context, ScopedReader watch) {
+    // Gets the index of this particular Todo
+    final index = watch(todoItemIndexProvider);
+    print('Building Item $index');
+    // Watches a single todo item
+    final todoItem = watch(todoProvider(index));
+    // Display it!
+    return Text(todoItem.todo);
+  }
+}
+```
+
+Which will print
+
+```
+flutter: Build List
+flutter: Build Item 0
+flutter: Build Item 1
+flutter: Build Item 2
+// After updating item 0 in the todoListProvider by doing something like
+//
+// context.read(todoListProvider).state =
+//    context.read(todoListProvider).state..[0] = Todo('New Todo');
+//
+// you will then see:
+flutter: Build Item 0
+```
+
+Note that not all apps need to optimize performance like this. In fact this will probably not affect your performance too drastically.
+Avoid premature optimization until you measure a performance impact.
+
+However, this approach does come with some nice organizational properties,
+such as keeping your widget constructors clean from an ever growing list of parameters being passed down.
+Therefore it is an important tool as part of riverpod dependency injection.

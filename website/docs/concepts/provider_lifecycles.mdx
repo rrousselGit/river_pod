@@ -1,0 +1,87 @@
+---
+title: Provider Lifecycles
+---
+
+## What is this ProviderReference?
+
+Every provider creation function is passed a [ProviderReference] object typically called `ref`. It is how providers interact with each other and their state lifecycles.
+
+For more about interactions between providers see [Combining Providers](/docs/concepts/combining_providers)
+
+The states that all different types of providers can go through are the same:
+
+- Uninitialized
+- Creating
+- Alive
+- Disposing
+
+### Uninitialized
+
+An unintialized provider does not take up any memory since its state is not initialized.
+It will stay that way until an Alive provider or the UI [read]s or [watch]es it.
+
+When an unitialized provider is being [read] or [watch]ed it will be created as described below.
+
+### Creating -> Alive
+
+When a provider is created your provider creation function will be run. Any
+providers that you [read] or [watch] will be created as needed and their state will be retrieved.
+
+If there are any circular dependencies during this creation Riverpod will throw an error.
+The best way to fix this error is to redesign your dependencies to have a uni-directional dataflow.
+
+The provider's state is stored in a `ProviderContainer`. In a Flutter app this container is in the `ProviderScope` widget at the root of your application.
+
+### Alive
+
+When your provider is Alive, changes to its state will cause dependent providers and/or the dependent UI to rebuild.
+
+### Alive -> Disposing
+
+Providers are not necessarily automatically disposed, and this is where a lot of developers run into issues and questions.
+
+There are two ways for a provider to be disposed.
+
+- When no longer being [watch]ed by the UI or another provider
+- When the provider is being recreated due to a change in another provider that was [watch]ed within the current provider's create function
+  :::note
+  See [Combining providers](/docs/concepts/combining_providers) for more about this
+  :::
+
+In both cases you can register actions that will happen before the provider is disposed.
+A disposed provider is essentially in the uninitialized state again, and will be created on demand when the provider is [watch]ed or [read] again.
+
+## Performing actions before the state destruction
+
+In some cases, the state of a provider may get destroyed or re-created.
+A common requirement in those situations is to perform a cleanup before the state of a provider
+is destroyed, such as closing a `StreamController`.
+
+This is done using the `ref` object, which is passed to the callback of all providers, using its [onDispose] method.
+
+The following example uses [onDispose] to close a `StreamController`:
+
+```dart
+final example = StreamProvider.autoDispose((ref) {
+  final streamController = StreamController<int>();
+
+  ref.onDispose(() {
+    // Closes the StreamController when the state of this provider is destroyed.
+    streamController.close();
+  });
+
+  return streamController.stream;
+});
+```
+
+:::note
+Depending on the provider used, it may already take care of the clean-up process.  
+For example, [StateNotifierProvider] will call the `dispose` method of a `StateNotifier`.
+:::
+
+[ref]: https://pub.dev/documentation/riverpod/latest/riverpod/ProviderReference-class.html
+[watch]: https://pub.dev/documentation/riverpod/latest/riverpod/ProviderReference/watch.html
+[read]: https://pub.dev/documentation/riverpod/latest/riverpod/ProviderReference/read.html
+[ondispose]: https://pub.dev/documentation/riverpod/latest/riverpod/ProviderReference/onDispose.html
+[statenotifierprovider]: https://pub.dev/documentation/riverpod/latest/riverpod/StateNotifierProvider-class.html
+[providerreference]: https://pub.dev/documentation/riverpod/latest/riverpod/ProviderReference-class.html

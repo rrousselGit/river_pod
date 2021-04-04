@@ -1,14 +1,14 @@
 ---
-title: Combining providers
+title: Combining Provider States
 ---
 
 Make sure to [read about Providers](/docs/concepts/providers) first.  
-In this guide, we will see everything there is to know about combining providers.
+In this guide, we will see everything there is to know about combining provider states.
 
-## Combining providers
+## Combining provider states
 
 We've previously seen how to create a simple provider. But the reality is,
-in many situation a provider will want to read the state of another provider.
+in many situations a provider will want to read the state of another provider.
 
 To do that, we can use the [ref] object passed to the callback of our provider,
 and use its [watch] method.
