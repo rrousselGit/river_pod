@@ -12,6 +12,19 @@ class Counter extends StateNotifier<int> {
   void decrement() => state--;
 }
 
+class CounterTest extends StateNotifier<int> implements Counter {
+  CounterTest() : super(1);
+
+  @override
+  void increment() => state++;
+  @override
+  void decrement() => state--;
+
+  @override
+  ProviderReference get ref => throw UnimplementedError();
+}
+
+final testProvider = Provider((ref) => 0);
 final counterProvider =
     StateNotifierProvider<Counter, int>((ref) => Counter(ref));
 final futureProvider = FutureProvider((ProviderReference ref) async {
@@ -26,6 +39,9 @@ final streamProvider = StreamProvider((ProviderReference ref) async* {
 final plainProvider = Provider((ProviderReference ref) => '');
 final plainNullProvider = Provider<String?>((ProviderReference ref) => null);
 final plainProviderAD = Provider.autoDispose((ProviderReference ref) => '');
+final stateProvider = StateProvider((ProviderReference ref) => '');
+final changeNotifier =
+    ChangeNotifierProvider((ProviderReference ref) => ChangeNotifier());
 final plainProviderFamilyAD = Provider.family
     .autoDispose<String, String>((ProviderReference ref, _) => '');
 final futureProviderAD =
@@ -34,12 +50,23 @@ final streamProviderAD = StreamProvider.autoDispose(
     (ProviderReference ref) => Stream.fromIterable(['1', '2', '3']));
 final stateNotifierProvider = StateNotifierProvider<Counter, int>(
     (ProviderReference ref) => Counter(ref));
-final scopedProvider = ScopedProvider<int>((ref) => 0);
+final scopedProvider = ScopedProvider<int>((watch) => 0);
+final otherScopedProvider =
+    ScopedProvider<int>((watch) => watch(scopedProvider));
 
 class Logger extends ProviderObserver {
   @override
   void didUpdateProvider(ProviderBase provider, Object? newValue) {
     print('$provider $newValue');
+  }
+}
+
+class ImageProvider extends StatelessWidget {
+  const ImageProvider({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Icon(Icons.plus_one);
   }
 }
 
@@ -50,8 +77,12 @@ class ConsumerWatch extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final countNotifier = watch(counterProvider.notifier);
     final count = watch(counterProvider);
-    return Center(
-      child: Text('$count'),
+    final fam = watch(plainProviderFamilyAD(''));
+    return Column(
+      children: [
+        const ImageProvider(),
+        Text('$count'),
+      ],
     );
   }
 }
@@ -86,6 +117,23 @@ class StatelessListen extends StatelessWidget {
       child: const Text('Counter'),
     );
   }
+}
+
+class StatelessListen2 extends StatelessWidget {
+  const StatelessListen2({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ProviderListener(
+      provider: counterProvider,
+      onChange: _onChange,
+      child: const Text('Counter'),
+    );
+  }
+}
+
+void _onChange(BuildContext context, int i) {
+  print(i);
 }
 
 class StatelessExpressionListen extends StatelessWidget {
@@ -194,6 +242,20 @@ class HooksConsumerWatch extends StatelessWidget {
   }
 }
 
+class HooksConsumerSimple extends StatelessWidget {
+  const HooksConsumerSimple({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => _build();
+  Widget _build() => HookBuilder(
+        builder: (context) {
+          useProvider(counterProvider);
+          final value = useAHook('');
+          return const Text('Press Me');
+        },
+      );
+}
+
 class BasicUseOfCustomHook extends HookWidget {
   const BasicUseOfCustomHook({Key? key}) : super(key: key);
   @override
@@ -201,6 +263,10 @@ class BasicUseOfCustomHook extends HookWidget {
     useAnotherHook();
     return Container();
   }
+}
+
+Object useAHook(String value) {
+  return useProvider(plainProviderFamilyAD(value));
 }
 
 Object useMyHook() {
@@ -218,4 +284,21 @@ class NoMigrateHook extends HookWidget {
     final state = useState('');
     return Container();
   }
+}
+
+void main() {
+  final container = ProviderContainer();
+  final count = container.read(testProvider);
+  ProviderContainer(overrides: [
+    stateNotifierProvider.overrideWithValue(CounterTest()),
+  ]).listen(stateNotifierProvider.notifier).read();
+  ProviderContainer().read(testProvider);
+  final _ = ProviderContainer(
+    overrides: [
+      testProvider.overrideWithProvider(Provider((ref) => 100)),
+    ],
+  );
+  final fut = container.refresh(futureProvider);
+  final val = container.refresh(stateNotifierProvider);
+  runApp(const ProviderScope(child: MaterialApp()));
 }
