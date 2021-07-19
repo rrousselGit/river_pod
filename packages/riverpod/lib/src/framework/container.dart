@@ -490,6 +490,7 @@ class ProviderContainer {
     for (final element in getAllProviderElementsInOrder().toList().reversed) {
       element.dispose();
     }
+    _stateReaders.clear();
   }
 
   /// Traverse the [ProviderElementBase]s associated with this [ProviderContainer].
